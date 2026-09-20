@@ -58,6 +58,7 @@ module "processor" {
   environment = {
     TABLE_NAME  = module.orders_table.name
     BUCKET_NAME = module.receipts_bucket.name
+    TOPIC_ARN   = module.order_events.arn
   }
   policy_arns = []
 }
@@ -88,6 +89,11 @@ resource "aws_iam_role_policy" "processor" {
         Effect   = "Allow"
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["sns:Publish"]
+        Resource = module.order_events.arn
       }
     ]
   })
