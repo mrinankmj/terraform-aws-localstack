@@ -7,9 +7,11 @@ import boto3
 _endpoint = os.getenv("AWS_ENDPOINT_URL")  # set automatically inside LocalStack
 dynamodb = boto3.resource("dynamodb", endpoint_url=_endpoint)
 s3 = boto3.client("s3", endpoint_url=_endpoint)
+sns = boto3.client("sns", endpoint_url=_endpoint)
 
 TABLE = os.environ["TABLE_NAME"]
 BUCKET = os.environ["BUCKET_NAME"]
+TOPIC_ARN = os.environ["TOPIC_ARN"]
 
 
 def handler(event, _context):
@@ -24,6 +26,10 @@ def handler(event, _context):
             Key=f"receipts/{order_id}.json",
             Body=json.dumps({"order_id": order_id, "status": "PROCESSED"}),
             ContentType="application/json",
+        )
+        sns.publish(
+            TopicArn=TOPIC_ARN,
+            Message=json.dumps({"order_id": order_id, "status": "PROCESSED"}),
         )
         processed += 1
     return {"processed": processed}
