@@ -18,6 +18,37 @@ module "orders_table" {
   hash_key = "order_id"
 }
 
+module "order_events" {
+  source = "./modules/sns"
+  name   = "order-events-${var.env}"
+}
+
+# Fan-out subscriber used to verify (and, in production, act on) order-processed
+# notifications published by the Lambda.
+resource "aws_sqs_queue" "notifications" {
+  name = "order-notifications-${var.env}"
+}
+
+resource "aws_sqs_queue_policy" "notifications" {
+  queue_url = aws_sqs_queue.notifications.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "sns.amazonaws.com" }
+      Action    = "sqs:SendMessage"
+      Resource  = aws_sqs_queue.notifications.arn
+      Condition = { ArnEquals = { "aws:SourceArn" = module.order_events.arn } }
+    }]
+  })
+}
+
+resource "aws_sns_topic_subscription" "notifications" {
+  topic_arn = module.order_events.arn
+  protocol  = "sqs"
+  endpoint  = aws_sqs_queue.notifications.arn
+}
+
 module "processor" {
   source     = "./modules/lambda"
   name       = "order-processor-${var.env}"
