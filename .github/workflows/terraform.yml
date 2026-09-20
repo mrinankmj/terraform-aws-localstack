@@ -1,0 +1,27 @@
+name: terraform
+on: [push, pull_request]
+jobs:
+  localstack-e2e:
+    runs-on: ubuntu-latest
+    services:
+      localstack:
+        image: localstack/localstack:3.5
+        ports: ["4566:4566"]
+        env:
+          SERVICES: s3,sqs,dynamodb,lambda,iam,logs
+        options: >-
+          -v /var/run/docker.sock:/var/run/docker.sock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_wrapper: false }
+      - run: terraform fmt -check -recursive
+      - run: terraform init
+      - run: terraform validate
+      - name: Wait for LocalStack
+        run: |
+          for _ in $(seq 1 30); do curl -s localhost:4566/_localstack/health | grep -q '"sqs"' && break; sleep 2; done
+      - run: terraform apply -auto-approve
+      - run: ./scripts-e2e.sh
+      - if: always()
+        run: terraform destroy -auto-approve
