@@ -19,11 +19,11 @@ module "orders_table" {
 }
 
 module "processor" {
-  source      = "./modules/lambda"
-  name        = "order-processor-${var.env}"
-  source_dir  = "${path.root}/lambda_src"
-  handler     = "handler.handler"
-  queue_arn   = module.orders_queue.arn
+  source     = "./modules/lambda"
+  name       = "order-processor-${var.env}"
+  source_dir = "${path.root}/lambda_src"
+  handler    = "handler.handler"
+  queue_arn  = module.orders_queue.arn
   environment = {
     TABLE_NAME  = module.orders_table.name
     BUCKET_NAME = module.receipts_bucket.name
@@ -33,8 +33,8 @@ module "processor" {
 
 # Least-privilege permissions for the processor
 resource "aws_iam_role_policy" "processor" {
-  name   = "order-processor-access"
-  role   = module.processor.role_name
+  name = "order-processor-access"
+  role = module.processor.role_name
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
