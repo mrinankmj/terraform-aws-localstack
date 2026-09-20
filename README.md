@@ -6,12 +6,14 @@ An event-driven AWS order pipeline built with **modular Terraform**, tested end 
 
 ```
 SQS: orders ──► Lambda: order-processor ──► DynamoDB: orders
-     │                                  └─► S3: receipts/<id>.json
+     │                                  ├─► S3: receipts/<id>.json
+     │                                  └─► SNS: order-events ──► SQS: order-notifications
      └─► DLQ (after 3 failed attempts)
 ```
 
 ## Highlights
-- **Reusable modules**: `s3`, `sqs`, `dynamodb`, `lambda`.
+- **Reusable modules**: `s3`, `sqs`, `dynamodb`, `lambda`, `sns`.
+- **Event notifications**: the processor publishes an order-processed event to SNS; a subscribed SQS queue demonstrates the fan-out (and lets the e2e check verify delivery).
 - **Least-privilege IAM** for the Lambda (only the exact actions and resources it needs).
 - **Secure defaults**: S3 encryption, versioning and public-access block; DynamoDB point-in-time recovery; SQS dead-letter queue.
 - **Default tags** on every resource for cost tracking.
