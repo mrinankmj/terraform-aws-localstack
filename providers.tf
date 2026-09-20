@@ -22,6 +22,7 @@ provider "aws" {
     dynamodb = var.localstack_endpoint
     lambda   = var.localstack_endpoint
     iam      = var.localstack_endpoint
+    sns      = var.localstack_endpoint
   }
 
   default_tags {
